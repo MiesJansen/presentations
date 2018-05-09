@@ -1,0 +1,6 @@
+[package]
+name = "product_upload_demo"
+version = "0.1.0"
+authors = ["Michael Jansen <mjjansen@users.noreply.github.com>"]
+
+[dependencies]
