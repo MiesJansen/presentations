@@ -5,7 +5,10 @@ use product::{PRODUCT_COLL_NAME};
 pub const CRYSTAL_PRODUCT_INTERNAL_ID_KEY: &'static str = "_crystalProductId";
 
 type CrystalProductId = String;
-type IsNew = bool;
+enum CrystalProductIdState {
+    New,
+    Existing,
+}
 
 fn get_from_product_table(db: &Database, id_field_name: &str, id_val: &str) -> io::Result<Option<CrystalProductId>>{
     let cmd = doc! {
@@ -43,13 +46,13 @@ fn get_from_product_table(db: &Database, id_field_name: &str, id_val: &str) -> i
     }
 }
 
-pub fn get(db: &Database, external_id_fieldname: &str, external_id_val: &str) -> io::Result<(CrystalProductId,IsNew)>{
+pub fn get(db: &Database, external_id_fieldname: &str, external_id_val: &str) -> io::Result<(CrystalProductId,CrystalProductIdState)>{
     //ensure no duplicate ids
     // * check the product table
     let c_id_opt = get_from_product_table(db, external_id_fieldname, external_id_val)?;
     if let Some(c_id) = c_id_opt {
         //   * if it's there
-        Ok((c_id,false))
+        Ok((c_id,CrystalProductIdState::New))
     } else {
         //   * if it's not there...
         //      * Add it!
