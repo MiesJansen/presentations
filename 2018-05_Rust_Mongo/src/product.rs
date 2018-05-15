@@ -1,35 +1,53 @@
 use std::io::{self,Error,ErrorKind};
+use mongo_driver::{collection, write_concern};
 use mongo_driver::database::Database;
 use csv;
 use bson::{Bson,Document};
-use product_id::{self, CRYSTAL_PRODUCT_INTERNAL_ID_KEY};
+use product_id::{self, CRYSTAL_PRODUCT_INTERNAL_ID_KEY, CrystalProductIdState};
 
 const BULK_WRITE_SIZE: usize = 1000;
 const EXTERNAL_PRODUCT_ID_KEY: &'static str = "bond_id";
 pub const PRODUCT_COLL_NAME: &'static str = "products";
 
-fn bulk_write(docs: Vec<Document>) {
-    // write docs
-    // clear my mutexes
+fn bulk_write(db: &Database, docs: &mut Vec<Document>, id_state: CrystalProductIdState) -> io::Result<()> {
+    let coll = db.get_collection(PRODUCT_COLL_NAME);
+    let bulk_op = coll.create_bulk_operation(Some(&collection::BulkOperationOptions{ordered: false, write_concern: write_concern::WriteConcern::default()}));
+    for document in docs.iter() {
+        if let Err(err) = bulk_op.insert(document) {
+            return Err(Error::new(ErrorKind::Other, format!("cannot add product to insertion queue: {}, product: {:?}",err, document)));
+        }
+    }
+    let result_doc = bulk_op.execute()
+        .map_err((|ref err| Error::new(ErrorKind::Other, format!("cannot write products to db: {}, products: {:?}",err, docs))))?;
+    println!("Bulk Insert Results: {:?}", result_doc);
+
+    if id_state == CrystalProductIdState::New { product_id::unlock_all(db)?; }
+    docs.clone_from(&Vec::with_capacity(BULK_WRITE_SIZE)); // erase!!
+
+    Ok(())
 }
 
 pub fn put <R: io::Read> (
     product_data_stream: R,
     db: &Database) -> io::Result<String> {
 
+    product_id::ensure_mutex_indicies(db)?; // move to init for production
+
     //send csv to product db
     let mut rdr = csv::ReaderBuilder::new().trim(csv::Trim::All).from_reader(product_data_stream);
     let headers = rdr.headers()?.clone();
     let mut rec_count: usize = 0;
+    let mut queue: Vec<Document> = Vec::with_capacity(BULK_WRITE_SIZE);
+    let mut is_new = CrystalProductIdState::Existing;
 
     for record in rdr.records() {
-        let mut doc = Document::new();  // TODO replace w. serde
+        let mut doc = Document::new();
 
         for (key, val) in headers.iter().zip(record?.iter()) {
             doc.insert_bson(key.to_owned(), Bson::String(val.to_owned()));
         }
 
-        let (c_id, is_new) = product_id::get(
+        let (c_id, is_new_curr) = product_id::get(
             db,
             EXTERNAL_PRODUCT_ID_KEY,
             doc.get_str(EXTERNAL_PRODUCT_ID_KEY)
@@ -43,15 +61,22 @@ pub fn put <R: io::Read> (
         doc.insert_bson(CRYSTAL_PRODUCT_INTERNAL_ID_KEY.to_owned(),
                         Bson::String(c_id));
 
+        if is_new_curr == CrystalProductIdState::New {is_new = CrystalProductIdState::New;}
+        queue.push(doc.clone());
         println!("{:?}", doc);
-
         rec_count += 1;
+        if rec_count == BULK_WRITE_SIZE {
+            bulk_write(db, &mut queue, is_new )?;
+            rec_count = 0;
+            is_new = CrystalProductIdState::Existing;
+        }
     }
-
+    if rec_count > 0 {
+        bulk_write(db, &mut queue, is_new)?;
+    }
 
     //tell UI to update
 
-    //Err(Error::new(ErrorKind::Other, format!("not done")))
     Ok(format!("records processed: {}", rec_count))
 }
 

@@ -1,12 +1,15 @@
-#![feature(plugin)]
+#![feature(plugin, getpid)]
 #![plugin(rocket_codegen)]
 
 // https://rocket.rs/guide/getting-started/
 extern crate rocket;
 extern crate csv;
 extern crate mongo_driver;
-#[macro_use(bson, doc)]
-extern crate bson;
+#[macro_use(bson, doc)] extern crate bson;
+extern crate serde;
+#[macro_use(Serialize, Deserialize)] extern crate serde_derive;
+extern crate uuid;
+
 
 // error! conflicts with rocket
 use rocket::request::{FromRequest};
@@ -16,6 +19,7 @@ use rocket::http::{Status};
 mod product;
 mod mongo;
 mod product_id;
+mod core;
 
 use std::io::{self, Read, ErrorKind};
 

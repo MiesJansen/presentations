@@ -1,6 +1,6 @@
 [package]
 name = "product_upload_demo"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Michael Jansen <mjjansen@users.noreply.github.com>"]
 
 [dependencies]
@@ -10,3 +10,8 @@ rocket_codegen = "= 0.3.3"
 csv = { git = "https://github.com/BurntSushi/rust-csv.git", rev = "d0642c500b7ea4b4e19d45aa19f10743063a3f57" }
 mongo_driver = { git = "https://github.com/MiesJansen/mongo-rust-driver.git", rev = "f6a4cefb64825a5cba4e3805675199f507d5d7e7" }
 bson = "0.11"
+serde = "1.0"
+serde_derive = "1.0"
+uuid = { version = "0.5", features = ["serde", "v4"] }
+hostname = "^0.1"
+thread-id = "3.2"
