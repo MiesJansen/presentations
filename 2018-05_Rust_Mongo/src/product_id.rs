@@ -184,12 +184,13 @@ pub fn ensure_mutex_indicies(db: &Database) -> io::Result<()> {
 }
 
 pub fn unlock_all(db: &Database) -> io::Result<()> {
-    db.command_simple(doc!{
+    let cmd = doc!{
         "delete": CRYSTAL_METADATA_MUTEX_COLL_NAME,
         "deletes": Bson::Array(vec![Bson::Document(doc!{
             SUBMITTER_ID:core::get_my_id()?
             })])
-        }, None)
-        .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot delete mutexes: {}",err)))?;
+        };
+    db.command_simple(cmd.clone(), None)
+        .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot delete mutexes: {} cmd: {:?}",err,cmd)))?;
     Ok(())
 }
