@@ -63,15 +63,14 @@ pub fn put <R: io::Read> (
 
         if is_new_curr == CrystalProductIdState::New {is_new = CrystalProductIdState::New;}
         queue.push(doc.clone());
-        println!("{:?}", doc);
+        //println!("{:?}", doc);
         rec_count += 1;
-        if rec_count == BULK_WRITE_SIZE {
+        if queue.len() == BULK_WRITE_SIZE {
             bulk_write(db, &mut queue, is_new )?;
-            rec_count = 0;
             is_new = CrystalProductIdState::Existing;
         }
     }
-    if rec_count > 0 {
+    if queue.len() > 0 {
         bulk_write(db, &mut queue, is_new)?;
     }
 

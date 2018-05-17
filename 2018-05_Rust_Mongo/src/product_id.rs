@@ -187,7 +187,8 @@ pub fn unlock_all(db: &Database) -> io::Result<()> {
     let cmd = doc!{
         "delete": CRYSTAL_METADATA_MUTEX_COLL_NAME,
         "deletes": Bson::Array(vec![Bson::Document(doc!{
-            SUBMITTER_ID:core::get_my_id()?
+            "q":{SUBMITTER_ID:core::get_my_id()?},
+            "limit":0
             })])
         };
     db.command_simple(cmd.clone(), None)
