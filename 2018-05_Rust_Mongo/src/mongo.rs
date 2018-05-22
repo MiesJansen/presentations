@@ -26,15 +26,15 @@ fn get_uri() -> Uri {
     Uri::new(env::var(MONGO_URI_KEY).expect(&format!("Cannot read: {}", MONGO_URI_KEY))).expect(&format!("Cannot create db URI: {}", MONGO_URI_KEY))
 }
 
+pub fn init_pool() -> Pool {
+    let uri = get_uri();
+    Arc::new(ClientPool::new(uri, None))
+}
+
 pub fn get_db<'a>(conn: &'a DbConn<'a>) -> Database<'a> {
     let uri = get_uri();
     let db_name = uri.get_database().expect("Please supply a db name.");
     conn.get_database(db_name.as_bytes())
-}
-
-pub fn init_pool() -> Pool {
-    let uri = get_uri();
-    Arc::new(ClientPool::new(uri, None))
 }
 
 pub fn update_indexes(db: &Database, collection_name: &str, indexes: Bson) -> Result<()> {

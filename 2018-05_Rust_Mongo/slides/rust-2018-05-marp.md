@@ -5,66 +5,18 @@
 ---
 ## Outline
 1. What is Crystal?
-1. Architecture/Technology Choices
-1. Live Coding Example (Product Management w. Atlas)
-1. Future Plans
+2. Coding Example
+3. Architecture/Technology Choices
+5. Appendix
+6. Q&A
 ---
 ## What is Crystal?
-Crystal is a platform for Sales & Trading to allow seamless workflows, scalable pricing/risk calculations and low latency execution.  
+Crystal is a platform for Sales & Trading to allow seamless workflows, scalable pricing/risk calculations and low latency execution across asset classes.
 
-This presentation will focus on Crystal's workflow capabilities in the Securitization Market.
-
----
-
-### Brief Background on Securitization Trading
-* When you take a series of assets (like mortgages for example) and package them you are securitizing them.  For example:
-
-Asset|Size($k)
-:---:|:---:
-Mortgage 1| 52
-Mortgage 2 |  140
-Mortgage 3 | 30
-Mortgage 4 | 225
-Mortgage ... |
-Mortgage 5,000 | 126
-Total | 1,000,000
----
-After Securitization Becomes...
-
-Liability|Size($mm)
-:---:|:---:
-Security A|500
-Security B|350
-Security C1|50
-Security C2|50
-Security R| 60
-Total|1,010
----
-An actual example: 
-![alt text](http://www.freddiemac.com/creditriskofferings/images/cro_stacr_diagram_lg_021417.jpg)
+This presentation will focus on Crystal's workflow capabilities in the Securitization Market and in particular the code to upload products.
 
 ---
-
-After these securities are created they trade via:
-
-1. Voice/email Auction: using an informal auction run by the seller called a Bid Wanted in Competition (BWIC). For example:
-
-Id|Security Name|Of|Cf
-:---:|:---:|:---:|:---:|
-A9484|Security A|500|140
-B8374|Security D|200|30
-A9023|Security C|325|325
-A1739|Security Z|50|45
-
-
-
-2. Private or Semi-Private B2B Trading: Email, Voice or Chat is the main mechanism
-
-Together, these are called Over The Counter (OTC) trading because it is not on an exchange.
-
----
-
-BWIC Workflow
+## BWIC Workflow (Brief Demo)
 Step #|Step|Today|Crystal v1
 :---:|:---:|:---:|:---:
 1|Client Sends BWIC to 1-40 Dealers|Email|Email
@@ -76,7 +28,9 @@ Step #|Step|Today|Crystal v1
 7|Trader Adds Final Bid|Spreadsheet|Crystal
 8|Trader sends bids to seller|email|email
 ---
-Architecture/Technology Choices
+## Coding Example
+---
+## Architecture/Technology Choices
 * System Requirements
     * Performance
         * "Chat" <75ms response time
@@ -130,14 +84,57 @@ let product_id_fieldnames: Vec<&String> = product_metadata_map
 * **documentation:** docs.rs is spectacular for helping you find the package you need
 * **Rust is Rust:** other languages drop into c or asm to achieve speed.  nearly all of ![alt text](https://www.rust-lang.org/logos/rust-logo-16x16.png) is written in ![alt text](https://www.rust-lang.org/logos/rust-logo-16x16.png)
 * **const:** let is const by default
+* **community:** strong support and easy to work with
 ---
-Things I try to avoid:
+Other Thoughts:
 * **Arc's:** Not understanding how these worked caused a significant memory leak
 * **bleeding edge libraries:** I initially tried (despite it being a prototype) using mongodb-labs/mongo-rust-driver-prototype.  It worked perfectly on windows and mac, but when we went to production on linux it was 40x slower!
-* 
+* **Simple Code:** as with all languages I use, I try to write as little code as possible and use a few language features as possible
 
-## Coding Example
+---
+## Apendix: 
+### Brief Background on Securitization Trading
+* When you take a series of assets (like mortgages for example) and package them you are securitizing them.  For example:
+
+Asset|Size($k)
+:---:|:---:
+Mortgage 1| 52
+Mortgage 2 |  140
+Mortgage 3 | 30
+Mortgage 4 | 225
+Mortgage ... |
+Mortgage 5,000 | 126
+Total | 1,000,000
+---
+After Securitization Becomes...
+
+Liability|Size($mm)
+:---:|:---:
+Security A|500
+Security B|350
+Security C1|50
+Security C2|50
+Security R| 60
+Total|1,010
+---
+An actual example: 
+![alt text](http://www.freddiemac.com/creditriskofferings/images/cro_stacr_diagram_lg_021417.jpg)
+
+---
+
+After these securities are created they trade via:
+
+1. Voice/email Auction: using an informal auction run by the seller called a Bid Wanted in Competition (BWIC). For example:
+
+Id|Security Name|Of|Cf
+:---:|:---:|:---:|:---:|
+A9484|Security A|500|140
+B8374|Security D|200|30
+A9023|Security C|325|325
+A1739|Security Z|50|45
 
 
-Notes:
-* https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet
+
+2. Private or Semi-Private B2B Trading: Email, Voice or Chat is the main mechanism
+
+Together, these are called Over The Counter (OTC) trading because it is not on an exchange.

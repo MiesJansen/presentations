@@ -6,15 +6,20 @@ set -e
 #RUST_BACKTRACE=1 ROCKET_PORT=8000 RUST_LOG=crystal_micro_server=trace cargo run
 #RUST_BACKTRACE=1 ROCKET_PORT=8001 RUST_LOG=crystal_micro_server=trace cargo run
 
-parallel_upload_attempts=62
-num_rand_columns=5
-num_rows_of_dummy_data=1000
+parallel_upload_attempts=10 #62
+num_rand_columns=50
+num_rows_of_dummy_data=10 #1000
 col_prefix="col"
 DELIMITER=","
 CMS_SERVER_PORTS=(8000 8001)
 keyfield="bond"
 
 #34 seconds for 2 cols, 100 rows
+
+# inserting: 992000, #real    18m50.281s  engines=2,threads=8,parallel=62,col=5,rows=100
+# db.products.aggregate([{$match : {bond: "bond_id" } },{"$group" : {_id:"$_crystalProductId", count:{$sum:1}}}])
+# db.products.find({bond:"bond_id"}).count()
+# db.products.remove({bond:"bond_id"})
 
 num_cores=$(getconf _NPROCESSORS_ONLN)
 
@@ -62,7 +67,7 @@ $(get_product_row $product_id $num_rand_columns)"
         for i in `seq 1 $num_cores`;
         do
             num_rows=$((num_rows + num_rows_of_dummy_data))
-           curl -H @/Users/mj/.crystal_keys --data "$product_data"  http://localhost:${port}/product_data/put &
+           curl --data "$product_data"  http://localhost:${port}/product_data/put &
         done
     done
 done

@@ -3,13 +3,13 @@
 
 // https://rocket.rs/guide/getting-started/
 extern crate rocket;
-extern crate csv;
 extern crate mongo_driver;
+
+extern crate csv;
 #[macro_use(bson, doc)] extern crate bson;
 extern crate serde;
 #[macro_use(Serialize, Deserialize)] extern crate serde_derive;
 extern crate uuid;
-
 
 // error! conflicts with rocket
 use rocket::request::{FromRequest};
@@ -22,7 +22,6 @@ mod product_id;
 mod core;
 
 use std::io::{self, Read, ErrorKind};
-
 
 impl<'a, 'r> FromRequest<'a, 'r> for mongo::DbConn<'r> {
     type Error = String;
@@ -38,16 +37,16 @@ fn return_error_to_client(res: io::Result<String>) -> io::Result<String> {
     if let Err(r) = res {
         Ok(format!("Error: {:?}",r))
     }
-        else {
-            res
-        }
+    else {
+        res
+    }
 }
 
 fn return_error_to_client_clear_stream<R: io::Read>(mut stream: R, res: io::Result<String>) -> io::Result<String> {
     if res.is_err() && ErrorKind::UnexpectedEof == res.as_ref().err().expect("return_error_to_client_clear_stream: said we had an error, but none found").kind() {
         return res;
     }
-    // means the entire stream needs to be transfered before seeing an error -- not good
+    // means the entire stream needs to be transferred before seeing an error -- not good
     for _byte in stream.by_ref().bytes() { }
     return_error_to_client(res)
 }

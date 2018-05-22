@@ -24,7 +24,7 @@ fn bulk_write(db: &Database, docs: &mut Vec<Document>, id_state: CrystalProductI
         .map_err((|ref err| Error::new(ErrorKind::Other, format!("cannot write products to db: {}, products: {:?}",err, docs))))?;
     println!("Bulk Insert Results: {:?}", result_doc);
 
-    if id_state == CrystalProductIdState::New { product_id::unlock_all(db)?; }
+    if id_state == CrystalProductIdState::ClearMutex { product_id::unlock_all(db)?; }
     docs.clone_from(&Vec::with_capacity(BULK_WRITE_SIZE)); // erase!!
 
     Ok(())
@@ -68,7 +68,7 @@ pub fn put <R: io::Read> (
         doc.insert_bson(CRYSTAL_PRODUCT_INTERNAL_ID_KEY.to_owned(),
                         Bson::String(c_id));
 
-        if is_new_curr == CrystalProductIdState::New {is_new = CrystalProductIdState::New;}
+        if is_new_curr == CrystalProductIdState::ClearMutex {is_new = CrystalProductIdState::ClearMutex;}
         queue.push(doc.clone());
         //println!("{:?}", doc);
         rec_count += 1;

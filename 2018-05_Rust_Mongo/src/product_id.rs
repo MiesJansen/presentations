@@ -16,7 +16,7 @@ const SUBMITTER_ID: &'static str = "submitter_id";
 type CrystalProductId = String;
 #[derive(PartialEq)]
 pub enum CrystalProductIdState {
-    New,
+    ClearMutex,
     Existing,
 }
 
@@ -108,41 +108,47 @@ fn lock(db: &Database, product_id_fieldname: &str, product_id: &str) -> io::Resu
 
     if let Some(wes) = ir.write_errors {
         if wes[0].code == mongo::MONGO_UNIQUE_INDEX_VIOLATION {
-            let c_id_result = db.command_batch(doc! {
-                "find":CRYSTAL_METADATA_MUTEX_COLL_NAME,
-                "filter": doc!{
-                    PRODUCT_ID_FIELDNAME: product_id_fieldname,
-                    PRODUCT_ID_VAL: product_id
-                }
-            }, None);
-            let c_id_opt = c_id_result
-                .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot read mutex from db: {}", err)))?
-                .next();
+            let c_id_opt = get_from_product_table(db, product_id_fieldname, product_id)?;
             if let Some(c_id) = c_id_opt {
-                Ok((c_id
-                        .map_err(|err| Error::new(ErrorKind::Other, format!("Error loading crystal id from db: {}", err)))?
-                        .get_str(CRYSTAL_PRODUCT_INTERNAL_ID_KEY)
-                        .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot find crystal id: {}", err)))?
-                        .to_owned(),
-                    CrystalProductIdState::Existing))
+                Ok((c_id, CrystalProductIdState::Existing))
             } else {
-                let c_id_opt = get_from_product_table(db, product_id_fieldname, product_id)?;
+                let c_id_result = db.command_batch(doc! {
+                    "find":CRYSTAL_METADATA_MUTEX_COLL_NAME,
+                    "filter": doc!{
+                        PRODUCT_ID_FIELDNAME: product_id_fieldname,
+                        PRODUCT_ID_VAL: product_id
+                    }
+                }, None);
+                let c_id_opt = c_id_result
+                    .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot read mutex from db: {}", err)))?
+                    .next();
                 if let Some(c_id) = c_id_opt {
-                    Ok((c_id, CrystalProductIdState::Existing))
+                    Ok((c_id
+                            .map_err(|err| Error::new(ErrorKind::Other, format!("Error loading crystal id from db: {}", err)))?
+                            .get_str(CRYSTAL_PRODUCT_INTERNAL_ID_KEY)
+                            .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot find crystal id: {}", err)))?
+                            .to_owned(),
+                        CrystalProductIdState::Existing))
                 } else {
-                    Err(Error::new(ErrorKind::Other, format!("Cannot find crystal id or insert a mutex to add one: field: {}, val: {}", product_id_fieldname, product_id)))
+                    let c_id_opt = get_from_product_table(db, product_id_fieldname, product_id)?;
+                    if let Some(c_id) = c_id_opt {
+                        Ok((c_id, CrystalProductIdState::Existing))
+                    } else {
+                        Err(Error::new(ErrorKind::Other, format!("Cannot find crystal id or insert a mutex to add one: field: {}, val: {}", product_id_fieldname, product_id)))
+                    }
                 }
             }
         } else {
             Err(Error::new(ErrorKind::Other, format!("Error writing the mutex: {:?}", wes)))
         }
     } else {
+        // now I own the mutex, so I need to clear it
         // check one more time in the product table
         let c_id_opt = get_from_product_table(db, product_id_fieldname, product_id)?;
         if let Some(c_id) = c_id_opt {
-            Ok((c_id, CrystalProductIdState::Existing))
+            Ok((c_id, CrystalProductIdState::ClearMutex))
         } else {
-            Ok((mutex.crystal_id.to_string(), CrystalProductIdState::New))
+            Ok((mutex.crystal_id.to_string(), CrystalProductIdState::ClearMutex))
         }
     }
 }
