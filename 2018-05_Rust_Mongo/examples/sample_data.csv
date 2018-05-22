@@ -1,3 +1,4 @@
-bond,prop1,prop2,bond_id
-"some bond", 78, 22, id1
-"some other bond", 11, 22, id3
+bond,prop1,prop2
+"some bond", 78, 22
+"some other bond", 11, 22
+"TPMT 2016-5 M1", 17.92, 15

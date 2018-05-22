@@ -73,7 +73,6 @@ fn rocket() -> rocket::Rocket {
         )
 }
 
-// upgrade to latest Rust so we can return Result :)
 fn main() {
     rocket().launch();
 }

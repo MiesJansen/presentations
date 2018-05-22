@@ -1,3 +1,5 @@
+<!-- $theme: default -->
+
 <!-- $size: 16:9 -->
 # Practical Experience Building a Modern Trading System (Crystal) with Rust & MongoDB
 ---
@@ -134,7 +136,7 @@ Things I try to avoid:
 * **bleeding edge libraries:** I initially tried (despite it being a prototype) using mongodb-labs/mongo-rust-driver-prototype.  It worked perfectly on windows and mac, but when we went to production on linux it was 40x slower!
 * 
 
-## Coding Example (Product Management w. Atlas)
+## Coding Example
 
 
 Notes:

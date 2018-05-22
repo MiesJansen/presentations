@@ -1,5 +1,8 @@
 extern crate hostname;
 extern crate thread_id;
+extern crate chrono;
+
+use core::chrono::{Utc,DateTime};
 
 use std::process;
 use std::io::{Result, Error, ErrorKind};
@@ -17,4 +20,10 @@ pub fn timestamp_ms() -> Result<u64>  {
     let current_time = SystemTime::now().duration_since(UNIX_EPOCH)
         .map_err((|err| Error::new(ErrorKind::Other, format!("cannot create timestamp: {}",err))))?;
     Ok(current_time.as_secs() * 1000 + current_time.subsec_nanos() as u64 / 1000 / 1000)
+}
+
+pub fn yyyymm_ddhhss() -> String {
+    let utc: DateTime<Utc> = Utc::now();
+    const FORMAT: &'static str =  "%Y%m%d-%H%M%S";
+    utc.format(FORMAT).to_string()
 }

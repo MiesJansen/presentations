@@ -4,10 +4,13 @@ use mongo_driver::database::Database;
 use csv;
 use bson::{Bson,Document};
 use product_id::{self, CRYSTAL_PRODUCT_INTERNAL_ID_KEY, CrystalProductIdState};
+use core;
 
 const BULK_WRITE_SIZE: usize = 1000;
-const EXTERNAL_PRODUCT_ID_KEY: &'static str = "bond_id";
+const EXTERNAL_PRODUCT_ID_KEY: &'static str = "bond";
 pub const PRODUCT_COLL_NAME: &'static str = "products";
+pub const AS_OF_TIME: &'static str = "_asOfUtc";
+pub const SUBMISSION_NAME: &'static str = "submission_name";
 
 fn bulk_write(db: &Database, docs: &mut Vec<Document>, id_state: CrystalProductIdState) -> io::Result<()> {
     let coll = db.get_collection(PRODUCT_COLL_NAME);
@@ -39,9 +42,13 @@ pub fn put <R: io::Read> (
     let mut rec_count: usize = 0;
     let mut queue: Vec<Document> = Vec::with_capacity(BULK_WRITE_SIZE);
     let mut is_new = CrystalProductIdState::Existing;
+    let my_id = core::get_my_id()?;
 
     for record in rdr.records() {
         let mut doc = Document::new();
+
+        doc.insert(SUBMISSION_NAME,format!("{}-{}",core::yyyymm_ddhhss(),my_id));
+        doc.insert_bson(AS_OF_TIME.to_owned(),Bson::I64(core::timestamp_ms()? as i64));
 
         for (key, val) in headers.iter().zip(record?.iter()) {
             doc.insert_bson(key.to_owned(), Bson::String(val.to_owned()));

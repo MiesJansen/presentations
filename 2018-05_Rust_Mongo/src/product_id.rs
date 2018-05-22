@@ -140,13 +140,6 @@ fn lock(db: &Database, product_id_fieldname: &str, product_id: &str) -> io::Resu
         // check one more time in the product table
         let c_id_opt = get_from_product_table(db, product_id_fieldname, product_id)?;
         if let Some(c_id) = c_id_opt {
-            db.command_simple(doc! {
-                "delete": CRYSTAL_METADATA_MUTEX_COLL_NAME,
-                "deletes": Bson::Array(vec![Bson::Document(doc!{
-                    PRODUCT_ID_FIELDNAME:product_id_fieldname,
-                    PRODUCT_ID_VAL:product_id})])
-                }, None)
-                .map_err(|err| Error::new(ErrorKind::Other, format!("Cannot delete field: {}", err)))?;
             Ok((c_id, CrystalProductIdState::Existing))
         } else {
             Ok((mutex.crystal_id.to_string(), CrystalProductIdState::New))
